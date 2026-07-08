@@ -245,7 +245,6 @@
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // ใส่ชุด Config ข้อมูลจริงของคุณลงในนี้เรียบร้อยแล้วครับ
   const firebaseConfig = {
     apiKey: "AIzaSyCBTm-kAp0NP9hGiRzm8eIIrp7o_sNKXnI",
     authDomain: "police-appointment-81e7d.firebaseapp.com",
@@ -510,10 +509,14 @@
     render();
   }
 
-  document.addEventListener('click', (e) => {
+  // แยกส่วนดักจับคลิกแถบตัวกรอง (Filter) ออกมา
+  document.getElementById('filterContainer').addEventListener('click', (e) => {
     const filter = e.target.getAttribute('data-filter');
-    if (filter) { activeFilter = filter; render(); return; }
+    if (filter) { activeFilter = filter; render(); }
+  });
 
+  // แยกส่วนดักจับคลิกการทำงานบนการ์ดนัดหมาย (ลบ/แก้ไข/สลับสถานะ/ส่งไลน์/พิมพ์)
+  document.getElementById('contentArea').addEventListener('click', (e) => {
     const id = e.target.getAttribute('data-id');
     const action = e.target.getAttribute('data-action');
     if (!id || !action) return;
