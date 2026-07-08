@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบบันทึกนัดหมาย · นัดหมายพนักงานสอบสวน</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --system-bg: #F5F5F7;
+    --card-bg: #FFFFFF;
+    --text-primary: #1D1D1F;
+    --text-secondary: #86868B;
+    --accent-blue: #0071E3;
+    --accent-blue-hover: #0077ED;
+    --border-color: #E8E8ED;
+    
+    --status-wait: #FF9500;
+    --status-wait-bg: #FFF9E6;
+    --status-done: #34C759;
+    --status-done-bg: #EAF9EE;
+    --status-postpone: #FF3B30;
+    --status-postpone-bg: #FFEBEA;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--system-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
+  }
+
+  .app-root {
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* Header Section */
+  .app-header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 24px 20px;
+  }
+
+  .header-top {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .app-header { padding: 32px 40px 24px; }
+    .header-top { grid-template-columns: 1fr auto; align-items: center; gap: 24px; }
+  }
+
+  .header-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin: 0 0 4px;
+  }
+
+  .header-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  @media (min-width: 768px) { .header-title { font-size: 28px; } }
+
+  .header-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 6px 0 0;
+  }
+
+  /* Officer Profile Config Box */
+  .officer-container-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #F5F5F7;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    width: 100%;
+  }
+  @media (min-width: 768px) { .officer-container-box { width: 360px; padding: 14px; } }
+
+  .officer-row-inputs {
+    display: flex;
+    gap: 8px;
+  }
+
+  .officer-sub-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .officer-sub-field.field-rank { flex: 0 0 75px; }
+
+  .officer-sub-field label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+
+  .officer-sub-field input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .officer-sub-field input:focus { border-color: var(--accent-blue); }
+
+  /* Sticky Toolbar */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 12px 20px;
+  }
+  @media (min-width: 768px) { .toolbar { padding: 16px 40px; } }
+  
+  .toolbar-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  @media (min-width: 768px) {
+    .toolbar-container { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  }
+
+  /* Apple Segmented Controls Filters */
+  .filters {
+    display: flex;
+    background: rgba(118, 118, 128, 0.12);
+    padding: 2px;
+    border-radius: 9px;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+
+  .filter-btn {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 1;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+  .filter-btn.active {
+    background: var(--card-bg);
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .right-tools {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  @media (min-width: 768px) { .right-tools { width: auto; align-items: center; gap: 12px; } }
+
+  .search-container {
+    position: relative;
+    flex: 1;
+  }
+  @media (min-width: 768px) { .search-container { flex: none; width: 220px; } }
+
+  .search-input {
+    width: 100%;
+    font-size: 13px;
+    padding: 10px 12px 10px 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2386868B' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .search-input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+  }
+
+  .btn-primary {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent-blue);
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-blue-hover); }
+
+  /* Content Area */
+  .content {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  @media (min-width: 768px) { .content { padding: 32px 40px; } }
+
+  .day-group { margin-bottom: 24px; }
+
+  .day-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+  }
+  .day-label .rule { flex: 1; height: 1px; background: #E5E5EA; }
+  .day-count { font-size: 12px; font-weight: 400; }
+
+  /* Responsive Cards Layout */
+  .appt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--card-bg);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.01);
+  }
+
+  @media (min-width: 768px) {
+    .appt-card {
+      display: grid;
+      grid-template-columns: 80px 1fr auto auto;
+      gap: 20px;
+      align-items: center;
+      padding: 16px 20px;
+    }
+  }
+
+  .appt-time {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  @media (min-width: 768px) {
+    .appt-time {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-right: 1px solid var(--border-color);
+      padding-right: 16px;
+      gap: 2px;
+    }
+  }
+  .appt-time span { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+
+  .appt-main { flex: 1; }
+  .appt-main .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+  }
+  .appt-main .meta { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+  .appt-main .meta b { color: var(--text-primary); font-weight: 500; }
+  
+  .appt-main .note {
+    font-size: 12.5px;
+    color: #48484A;
+    margin-top: 8px;
+    background: #F5F5F7;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: block;
+    word-break: break-word;
+  }
+
+  /* Stamp Badge */
+  .stamp-container { display: flex; align-items: center; }
+  .stamp {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: opacity 0.15s;
+  }
+  @media (min-width: 768px) { .stamp { width: auto; padding: 6px 14px; } }
+  .stamp.status-รอ { color: var(--status-wait); background: var(--status-wait-bg); }
+  .stamp.status-เสร็จสิ้น { color: var(--status-done); background: var(--status-done-bg); }
+  .stamp.status-เลื่อนนัด { color: var(--status-postpone); background: var(--status-postpone-bg); }
+
+  /* Action Buttons Group */
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    border-top: 1px solid #F5F5F7;
+    padding-top: 10px;
+  }
+  @media (min-width: 768px) { .card-actions { border-top: none; padding-top: 0; gap: 4px; } }
+
+  .icon-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-blue);
+    padding: 8px 12px;
+    border-radius: 8px;
+    flex: 1;
+    text-align: center;
+  }
+  @media (min-width: 768px) { .icon-btn { flex: none; padding: 6px 10px; } }
+  .icon-btn:hover { background: rgba(0, 113, 227, 0.06); }
+  .icon-btn.copy { color: #5856D6; }
+  .icon-btn.copy:hover { background: rgba(88, 86, 214, 0.06); }
+  .icon-btn.print { color: #34C759; }
+  .icon-btn.print:hover { background: rgba(52, 199, 89, 0.06); }
+  .icon-btn.delete { color: var(--status-postpone); }
+  .icon-btn.delete:hover { background: rgba(255, 59, 48, 0.06); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+  .empty-state .big { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+
+  /* iOS Bottom Sheet Modal Styles */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.2s ease-out;
+  }
+  @media (min-width: 768px) { .overlay { align-items: center; padding: 20px; } }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 500px;
+    padding: 24px;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: sheetUpMobile 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (min-width: 768px) {
+    .modal { border-radius: 16px; animation: sheetUpDesktop 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  }
+
+  .modal h3 { font-size: 18px; font-weight: 700; margin: 0 0 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+  
+  .field input, .field select, .field textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    outline: none;
+    color: var(--text-primary);
+    background: #F5F5F7;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { 
+    border-color: var(--accent-blue); 
+    background: var(--card-bg);
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  textarea { resize: none; min-height: 70px; }
+
+  .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+  @media (min-width: 480px) { .modal-actions { flex-direction: row; justify-content: flex-end; gap: 10px; } }
+  
+  .btn-ghost {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: center;
+  }
+  @media (min-width: 480px) { .btn-ghost { padding: 10px 16px; font-size: 13px; } }
+
+  .modal-actions .btn-primary { padding: 12px; font-size: 14px; border-radius: 10px; text-align: center; }
+  @media (min-width: 480px) { .modal-actions .btn-primary { padding: 10px 16px; font-size: 13px; border-radius: 8px; } }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheetUpMobile { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes sheetUpDesktop { from { transform: scale(0.96) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+  /* Print Styles */
+  #print-area { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; }
+    .print-ticket { border: 1px solid #D1D1D6; padding: 40px; border-radius: 12px; }
+    .print-header { text-align: center; border-bottom: 1px solid #E5E5EA; padding-bottom: 16px; margin-bottom: 24px; }
+    .print-title { font-size: 22px; font-weight: 700; }
+    .print-row { margin-bottom: 16px; font-size: 15px; display: flex; }
+    .print-label { font-weight: 600; width: 150px; }
+    .print-value { flex: 1; border-bottom: 1px dashed #000; padding-bottom: 2px; }
+    .print-note-box { margin-top: 24px; padding: 14px; border-radius: 8px; background: #F2F2F7; font-size: 13px; }
+    .print-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .print-signature-wrapper { width: 340px; text-align: left; }
+    .print-sign-row { display: flex; align-items: flex-end; gap: 6px; }
+    .print-dotted-line { flex: 1; border-bottom: 1px dashed #000; height: 28px; }
+    .print-name-under { text-align: center; padding-right: 95px; margin-top: 6px; }
+    .print-pos-under { text-align: center; padding-right: 95px; font-size: 12px; color: #48484A; }
+  }
+  </style>
+</head>
+<body>
+
+<div id="root" class="app-root"></div>
+<div id="print-area"></div>
+
+<script>
+const STORAGE_KEY = 'investigator-appointments-v1';
+const OFFICER_STATION_KEY = 'investigator-station-v1';
+const OFFICER_RANK_KEY = 'investigator-rank-v1';
+const OFFICER_NAME_KEY = 'investigator-name-v1';
+const OFFICER_POS_KEY = 'investigator-pos-v1';
+
+const STATUSES = ['รอ','เสร็จสิ้น','เลื่อนนัด'];
+const CASE_TYPES = [
+  'กลุ่มที่ 1 คดีอุกฉกรรจ์และสะเทือนขวัญ',
+  'กลุ่มที่ 2 คดีชีวิต ร่างกาย และเพศ',
+  'กลุ่มที่ 3 คดีประทุษร้ายต่อทรัพย์',
+  'กลุ่มที่ 4 คดีที่รัฐเป็นผู้เสียหาย'
+];
+
+let appointments = [];
+let officerStation = '';
+let officerRank = '';
+let officerName = '';
+let officerPos = '';
+
+let activeFilter = 'ทั้งหมด';
+let searchTerm = '';
+let editingId = null;
+let modalOpen = false;
+
+const root = document.getElementById('root');
+
+function uid(){ return 'a' + Date.now() + Math.random().toString(36).slice(2,8); }
+
+function loadData(){
+  try {
+    const r = localStorage.getItem(STORAGE_KEY);
+    appointments = r ? JSON.parse(r) : [];
+  } catch(e) { appointments = []; }
+  
+  try {
+    officerStation = localStorage.getItem(OFFICER_STATION_KEY) || '';
+    officerRank = localStorage.getItem(OFFICER_RANK_KEY) || '';
+    officerName = localStorage.getItem(OFFICER_NAME_KEY) || '';
+    officerPos = localStorage.getItem(OFFICER_POS_KEY) || '';
+  } catch(e){}
+  
+  render();
+}
+
+function saveAppointments(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appointments)); } catch(e){}
+}
+
+function saveOfficerInfo(type, val){
+  try {
+    if(type === 'station') { officerStation = val; localStorage.setItem(OFFICER_STATION_KEY, val); }
+    if(type === 'rank') { officerRank = val; localStorage.setItem(OFFICER_RANK_KEY, val); }
+    if(type === 'name') { officerName = val; localStorage.setItem(OFFICER_NAME_KEY, val); }
+    if(type === 'pos') { officerPos = val; localStorage.setItem(OFFICER_POS_KEY, val); }
+  } catch(e){}
+}
+
+function fmtDateLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+  const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const base = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+  if(d.getTime() === today.getTime()) return 'วันนี้ · ' + base;
+  if(d.getTime() === tomorrow.getTime()) return 'พรุ่งนี้ · ' + base;
+  return base;
+}
+
+function fmtFullThaiDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  return `วัน${days[d.getDay()]}ที่ ${d.getDate()} เดือน ${months[d.getMonth()]} พ.ศ. ${d.getFullYear() + 543}`;
+}
+
+function groupByDate(list){
+  const groups = {};
+  list.forEach(a => {
+    if(!groups[a.date]) groups[a.date] = [];
+    groups[a.date].push(a);
+  });
+  return Object.keys(groups).sort().map(date => ({
+    date, items: groups[date].sort((x,y)=> x.time.localeCompare(y.time))
+  }));
+}
+
+function filteredAppointments(){
+  return appointments.filter(a => {
+    if(activeFilter !== 'ทั้งหมด' && a.status !== activeFilter) return false;
+    if(searchTerm){
+      const s = searchTerm.toLowerCase();
+      return (a.name.toLowerCase().includes(s) || a.caseType.toLowerCase().includes(s));
+    }
+    return true;
+  });
+}
+
+function openModal(id){ editingId = id || null; modalOpen = true; render(); }
+function closeModal(){ modalOpen = false; editingId = null; render(); }
+function deleteAppt(id){ appointments = appointments.filter(a => a.id !== id); saveAppointments(); render(); }
+
+function cycleStatus(id){
+  const a = appointments.find(x => x.id === id);
+  if(!a) return;
+  a.status = STATUSES[(STATUSES.indexOf(a.status)+1) % STATUSES.length];
+  saveAppointments();
+  render();
+}
+
+function copyApptText(id) {
+  const a = appointments.find(x => x.id === id);
+  if(!a) return;
+  const stationText = officerStation ? `งานสอบสวน ${officerStation}` : 'งานสอบสวน';
+  const officerText = `${officerRank}${officerName} (${officerPos})`;
+  const text = `📋 ใบนัดหมายพนักงานสอบสวน\nหน่วยงาน: ${stationText}\nผู้นัดหมาย: ${a.name}\nวันนัดหมาย: ${fmtFullThaiDate(a.date)}\nเวลา: ${a.time} น.\nประเภทคดี: ${a.caseType}\nนัดหมายเพื่อ: ${a.note || '-'}\n\n*กรุณาเตรียมบัตรประชาชนและเอกสารที่เกี่ยวข้องมาก่อนเวลานัด 10-15 นาที`;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    alert('คัดลอกข้อความนัดหมายไปยังคลิปบอร์ดแล้ว ส่งต่อใน Line ได้ทันที!');
+  }).catch(() => {
+    alert('ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาแคปหน้าจอแทน');
+  });
+}
+
+function printAppt(id) {
+  const a = appointments.find(x => x.id === id);
+  if(!a) return;
+  const printArea = document.getElementById('print-area');
+  const stationText = officerStation || 'สถานีตำรวจภูธรอิเล็กทรอนิกส์';
+  document.title = `ใบนัดหมาย_${a.name.replace(/ /g,'')}`;
+
+  printArea.innerHTML = `
+    <div class="print-ticket">
+      <div class="print-header">
+        <div class="print-title">ใบนัดหมายพนักงานสอบสวน</div>
+        <div class="print-subtitle">งานสอบสวน${escapeHtml(stationText)}</div>
+      </div>
+      <div class="print-row"><span class="print-label">ผู้แจ้งความ/ผู้นัดหมาย:</span><span class="print-value">${escapeHtml(a.name)}</span></div>
+      <div class="print-row"><span class="print-label">วันนัดหมาย:</span><span class="print-value">${fmtFullThaiDate(a.date)}</span></div>
+      <div class="print-row"><span class="print-label">เวลานัดหมาย:</span><span class="print-value">${a.time} น.</span></div>
+      <div class="print-row"><span class="print-label">ประเภทกลุ่มคดี:</span><span class="print-value">${escapeHtml(a.caseType || '-')}</span></div>
+      ${a.note ? `<div class="print-row"><span class="print-label">รายละเอียดการนัด:</span><span class="print-value">${escapeHtml(a.note)}</span></div>` : ''}
+      <div class="print-note-box"><strong>คำแนะนำ:</strong> กรุณาเดินทางมาพบพนักงานสอบสวนก่อนเวลานัดหมาย 10-15 นาที พร้อมเตรียมบัตรประจำตัวประชาชนและเอกสารหลักฐานสำคัญที่เกี่ยวข้องให้ครบถ้วน</div>
+      <div class="print-footer">
+        <div><small style="color:#8e8e93;">พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH')} น.</small></div>
+        <div class="print-signature-wrapper">
+          <div class="print-sign-row"><span class="font-weight:600">${escapeHtml(officerRank || 'ยศ')}</span><div class="print-dotted-line"></div><span>พนักงานสอบสวน</span></div>
+          <div class="print-name-under">( ${escapeHtml(officerName || '..................................')} )</div>
+          <div class="print-pos-under">${escapeHtml(officerPos ? officerPos + ' ' + officerStation : 'พนักงานสอบสวน')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+function handleFormSubmit(e){
+  e.preventDefault();
+  const f = e.target;
+  const data = {
+    name: f.name.value.trim(), date: f.date.value, time: f.time.value,
+    caseType: f.caseType.value, status: f.status.value, note: f.note.value.trim()
+  };
+  if(editingId){
+    const idx = appointments.findIndex(a => a.id === editingId);
+    if(idx > -1) appointments[idx] = { ...appointments[idx], ...data };
+  }else{
+    appointments.push({ id: uid(), ...data });
+  }
+  saveAppointments(); closeModal();
+}
+
+function render(){
+  const list = filteredAppointments();
+  const groups = groupByDate(list);
+  const editing = editingId ? appointments.find(a => a.id === editingId) : null;
+
+  root.innerHTML = `
+    <div class="app-header">
+      <div class="header-top">
+        <div>
+          <p class="header-eyebrow">ระบบบันทึกนัดหมาย · งานสอบสวน</p>
+          <h1 class="header-title">นัดหมายพนักงานสอบสวน</h1>
+          <p class="header-sub">รายการนัดหมายทั้งหมด ${appointments.length} รายการ</p>
+        </div>
+        <div class="officer-container-box">
+          <div class="officer-sub-field">
+            <label>สถานีตำรวจ / หน่วยงาน</label>
+            <input id="officerStationInput" type="text" placeholder="สภ.เมืองนนทบุรี" value="${escapeAttr(officerStation)}">
+          </div>
+          <div class="officer-row-inputs">
+            <div class="officer-sub-field field-rank">
+              <label>ยศ</label>
+              <input id="officerRankInput" type="text" placeholder="พ.ต.ต." value="${escapeAttr(officerRank)}">
+            </div>
+            <div class="officer-sub-field">
+              <label>ชื่อ - นามสกุล พนักงานสอบสวน</label>
+              <input id="officerNameInput" type="text" placeholder="สมชาย ใจดี" value="${escapeAttr(officerName)}">
+            </div>
+          </div>
+          <div class="officer-sub-field">
+            <label>ตำแหน่งเฉพาะ</label>
+            <input id="officerPosInput" type="text" placeholder="รอง สว.(สอบสวน)" value="${escapeAttr(officerPos)}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-container">
+        <div class="filters">
+          ${['ทั้งหมด', ...STATUSES].map(s => `
+            <button class="filter-btn ${activeFilter===s?'active':''}" data-filter="${s}">${s}</button>
+          `).join('')}
+        </div>
+        <div class="right-tools">
+          <div class="search-container">
+            <input class="search-input" id="searchInput" type="text" placeholder="ค้นหาชื่อ..." value="${escapeAttr(searchTerm)}">
+          </div>
+          <button class="btn-primary" id="addBtn">นัดหมายใหม่</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      ${groups.length === 0 ? `
+        <div class="empty-state">
+          <div class="big">ไม่มีนัดหมายในรายการนี้</div>
+          <div>คลิกที่ปุ่ม "นัดหมายใหม่" เพื่อเพิ่มข้อมูลนัดหมาย</div>
+        </div>
+      ` : groups.map(g => `
+        <div class="day-group">
+          <div class="day-label">
+            <span>${fmtDateLabel(g.date)}</span>
+            <span class="rule"></span>
+            <span class="day-count">${g.items.length} นัดหมาย</span>
+          </div>
+          ${g.items.map(a => renderCard(a)).join('')}
+        </div>
+      `).join('')}
+    </div>
+
+    ${modalOpen ? renderModal(editing) : ''}
+  `;
+
+  attachEvents();
+}
+
+function renderCard(a){
+  return `
+    <div class="appt-card">
+      <div class="appt-time">
+        ${a.time} น.
+        <span>(${a.date.slice(8,10)}/${a.date.slice(5,7)})</span>
+      </div>
+      <div class="appt-main">
+        <p class="name">${escapeHtml(a.name)}</p>
+        <div class="meta"><b>ประเภท:</b> ${escapeHtml(a.caseType || '-')}</div>
+        ${a.note ? `<div class="note">${escapeHtml(a.note)}</div>` : ''}
+      </div>
+      <div class="stamp-container">
+        <button class="stamp status-${a.status}" data-cycle="${a.id}">${a.status}</button>
+      </div>
+      <div class="card-actions">
+        <button class="icon-btn copy" data-copy="${a.id}">ส่ง Line</button>
+        <button class="icon-btn print" data-print="${a.id}">พิมพ์</button>
+        <button class="icon-btn" data-edit="${a.id}">แก้ไข</button>
+        <button class="icon-btn delete" data-delete="${a.id}">ลบ</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderModal(editing){
+  const d = editing || { name:'', date: new Date().toISOString().slice(0,10), time:'09:00', caseType: CASE_TYPES[0], status:'รอ', note:'' };
+  return `
+    <div class="overlay" id="overlay">
+      <div class="modal">
+        <h3>${editing ? 'แก้ไขรายละเอียดนัดหมาย' : 'บันทึกนัดหมายใหม่'}</h3>
+        <form id="apptForm">
+          <div class="field">
+            <label>ชื่อผู้แจ้งความ / ผู้นัดหมาย</label>
+            <input name="name" type="text" value="${escapeAttr(d.name)}" placeholder="ชื่อ-นามสกุล" required>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>วันที่นัด</label>
+              <input name="date" type="date" value="${d.date}" required>
+            </div>
+            <div class="field">
+              <label>เวลานัด</label>
+              <input name="time" type="time" value="${d.time}" required>
+            </div>
+          </div>
+          <div class="field">
+            <label>ประเภทกลุ่มคดีอาญา (ตร.)</label>
+            <select name="caseType">
+              ${CASE_TYPES.map(t => `<option value="${t}" ${d.caseType===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>สถานะการนัดหมาย</label>
+            <select name="status">
+              ${STATUSES.map(s => `<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>รายละเอียดการนัดหมาย</label>
+            <textarea name="note" placeholder="ระบุรายละเอียดเพิ่มเติม...">${escapeHtml(d.note)}</textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="cancelBtn">ยกเลิก</button>
+            <button type="submit" class="btn-primary">${editing ? 'บันทึกข้อมูล' : 'เพิ่มนัดหมาย'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+function attachEvents(){
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.onclick = () => { activeFilter = btn.dataset.filter; render(); };
+  });
+  
+  const searchInput = document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.oninput = (e) => { searchTerm = e.target.value; render(); };
+    searchInput.focus();
+    searchInput.setSelectionRange(searchTerm.length, searchTerm.length);
+  }
+  
+  if(document.getElementById('officerStationInput')) document.getElementById('officerStationInput').onchange = (e) => saveOfficerInfo('station', e.target.value);
+  if(document.getElementById('officerRankInput')) document.getElementById('officerRankInput').onchange = (e) => saveOfficerInfo('rank', e.target.value);
+  if(document.getElementById('officerNameInput')) document.getElementById('officerNameInput').onchange = (e) => saveOfficerInfo('name', e.target.value);
+  if(document.getElementById('officerPosInput')) document.getElementById('officerPosInput').onchange = (e) => saveOfficerInfo('pos', e.target.value);
+
+  if(document.getElementById('addBtn')) document.getElementById('addBtn').onclick = () => openModal(null);
+
+  document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyApptText(btn.dataset.copy));
+  document.querySelectorAll('[data-print]').forEach(btn => btn.onclick = () => printAppt(btn.dataset.print));
+  document.querySelectorAll('[data-edit]').forEach(btn => btn.onclick = () => openModal(btn.dataset.edit));
+  document.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.onclick = () => { if(confirm('ยืนยันการลบนัดหมายนี้?')) deleteAppt(btn.dataset.delete); };
+  });
+  document.querySelectorAll('[data-cycle]').forEach(btn => btn.onclick = () => cycleStatus(btn.dataset.cycle));
+
+  const overlay = document.getElementById('overlay');
+  if(overlay) overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+  if(document.getElementById('cancelBtn')) document.getElementById('cancelBtn').onclick = closeModal;
+  if(document.getElementById('apptForm')) document.getElementById('apptForm').onsubmit = handleFormSubmit;
+}
+
+loadData();
+</script>
+</body>
+</html>
