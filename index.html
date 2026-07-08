@@ -33,10 +33,23 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
   }
 
+  /* Loading Overlay Style */
+  .loading-screen {
+    position: fixed; inset: 0; background: #F5F5F7;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; font-size: 15px; color: var(--text-secondary);
+  }
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid var(--border-color);
+    border-top-color: var(--accent-blue); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   /* Auth Screen Style */
   .auth-container {
     display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 20px; background: #F5F5F7;
+    min-height: 100vh; padding: 20px; background: #F5F5F7; display: none;
   }
   .auth-card {
     background: var(--card-bg); padding: 32px; border-radius: 20px;
@@ -169,6 +182,11 @@
 </head>
 <body>
 
+<div id="loadingScreen" class="loading-screen">
+  <div class="spinner"></div>
+  <div>กำลังตรวจสอบสถานะเข้าสู่ระบบ...</div>
+</div>
+
 <div id="authScreen" class="auth-container">
   <div class="auth-card">
     <h2 id="authTitle">เข้าสู่ระบบ</h2>
@@ -229,7 +247,7 @@
           <input class="search-input" id="searchInput" type="text" placeholder="ค้นหาชื่อ...">
         </div>
         <button class="btn-primary" id="addBtn">นัดหมายใหม่</button>
-        <button class="btn-secondary btn-danger" onclick="logout()">ออกระบบ</button>
+        <button class="btn-secondary btn-danger" id="logoutBtn">ออกระบบ</button>
       </div>
     </div>
   </div>
@@ -275,18 +293,30 @@
     'กลุ่มที่ 4 คดีที่รัฐเป็นผู้เสียหาย'
   ];
 
+  // ปรับปรุงการเช็กสถานะ Session ล็อกอินค้าง (ข้ามหน้าล็อกอินทันทีถ้าเคยลงชื่อเข้าไว้แล้ว)
   onAuthStateChanged(auth, (user) => {
+    const loadingScreen = document.getElementById('loadingScreen');
+    const authScreen = document.getElementById('authScreen');
+    const appScreen = document.getElementById('appScreen');
+
     if (user) {
       currentUser = user;
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('appScreen').style.display = 'block';
+      authScreen.style.display = 'none';
+      appScreen.style.display = 'block';
       loadOfficerProfile();
       listenToAppointments();
     } else {
       currentUser = null;
-      document.getElementById('authScreen').style.display = 'flex';
-      document.getElementById('appScreen').style.display = 'none';
+      authScreen.style.display = 'flex';
+      appScreen.style.display = 'none';
       appointments = [];
+      render();
+    }
+    
+    // ซ่อนหน้าจอโหลดสายตาเมื่อได้สถานะสิทธิ์ที่ชัดเจนแล้ว
+    if(loadingScreen) {
+      loadingScreen.style.opacity = '0';
+      setTimeout(() => loadingScreen.style.display = 'none', 300);
     }
   });
 
@@ -317,11 +347,19 @@
     document.getElementById('authSwitchBtn').innerText = isSignUpMode ? 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่' : 'ยังไม่มีบัญชี? สมัครสมาชิกใหม่';
   };
 
-  window.logout = () => {
-    if(confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) signOut(auth);
-  };
+  function logout() {
+    if(confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+      signOut(auth).then(() => {
+        // เคลียร์ค่าอินพุตโปรไฟล์เดิมออกเมื่อเปลี่ยนบัญชี
+        document.getElementById('officerStationInput').value = '';
+        document.getElementById('officerRankInput').value = '';
+        document.getElementById('officerNameInput').value = '';
+        document.getElementById('officerPosInput').value = '';
+      });
+    }
+  }
+  document.getElementById('logoutBtn').onclick = logout;
 
-  // ดึงข้อมูลโปรไฟล์ และนำค่าไปยัดลงกล่อง Input ทันทีหลังล็อกอิน
   function loadOfficerProfile() {
     const profileRef = ref(db, `users/${currentUser.uid}/profile`);
     onValue(profileRef, (snapshot) => {
@@ -335,7 +373,7 @@
       if(rankInput) rankInput.value = data.rank || '';
       if(nameInput) nameInput.value = data.name || '';
       if(posInput) posInput.value = data.pos || '';
-    }, { onlyOnce: true }); // ดึงข้อมูลโครงสร้างครั้งแรกเท่านั้นเพื่อไม่ให้รบกวนจังหวะที่พนักงานสอบสวนกำลังพิมพ์อยู่
+    }, { onlyOnce: true });
   }
 
   function saveOfficerProfile(field, value) {
