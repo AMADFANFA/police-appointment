@@ -321,15 +321,21 @@
     if(confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) signOut(auth);
   };
 
+  // ดึงข้อมูลโปรไฟล์ และนำค่าไปยัดลงกล่อง Input ทันทีหลังล็อกอิน
   function loadOfficerProfile() {
     const profileRef = ref(db, `users/${currentUser.uid}/profile`);
     onValue(profileRef, (snapshot) => {
       const data = snapshot.val() || {};
-      document.getElementById('officerStationInput').value = data.station || '';
-      document.getElementById('officerRankInput').value = data.rank || '';
-      document.getElementById('officerNameInput').value = data.name || '';
-      document.getElementById('officerPosInput').value = data.pos || '';
-    });
+      const stationInput = document.getElementById('officerStationInput');
+      const rankInput = document.getElementById('officerRankInput');
+      const nameInput = document.getElementById('officerNameInput');
+      const posInput = document.getElementById('officerPosInput');
+
+      if(stationInput) stationInput.value = data.station || '';
+      if(rankInput) rankInput.value = data.rank || '';
+      if(nameInput) nameInput.value = data.name || '';
+      if(posInput) posInput.value = data.pos || '';
+    }, { onlyOnce: true }); // ดึงข้อมูลโครงสร้างครั้งแรกเท่านั้นเพื่อไม่ให้รบกวนจังหวะที่พนักงานสอบสวนกำลังพิมพ์อยู่
   }
 
   function saveOfficerProfile(field, value) {
@@ -509,13 +515,11 @@
     render();
   }
 
-  // แยกส่วนดักจับคลิกแถบตัวกรอง (Filter) ออกมา
   document.getElementById('filterContainer').addEventListener('click', (e) => {
     const filter = e.target.getAttribute('data-filter');
     if (filter) { activeFilter = filter; render(); }
   });
 
-  // แยกส่วนดักจับคลิกการทำงานบนการ์ดนัดหมาย (ลบ/แก้ไข/สลับสถานะ/ส่งไลน์/พิมพ์)
   document.getElementById('contentArea').addEventListener('click', (e) => {
     const id = e.target.getAttribute('data-id');
     const action = e.target.getAttribute('data-action');
